@@ -296,7 +296,7 @@
             document.getElementById(fieldId).appendChild(newCard);
         }
 
-        // Delete a deck
+                // Delete a deck
         function deleteDeck(deckId) {
             if (confirm("Are you sure you want to delete this deck?")) {
                 database.ref('decks/' + deckId).remove().then(() => {
@@ -307,7 +307,9 @@
 
         // Load decks on page load
         window.onload = loadDecks;
-<script src="app.js"></script>
 
+    </script> <!-- Close your script tag here! -->
+
+    <script src="app.js"></script> <!-- External JS file is linked outside of any script block -->
 </body>
 </html>
