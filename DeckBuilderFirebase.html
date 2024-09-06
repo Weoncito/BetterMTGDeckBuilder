@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic: The Gathering Deck Builder</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
+
+        .sidebar {
+            height: 100%;
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #333;
+            padding-top: 20px;
+            color: white;
+        }
+
+        .sidebar a {
+            padding: 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: white;
+            display: block;
+        }
+
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #575757;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .deck-builder {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .field {
+            width: 45%;
+            padding: 10px;
+            border: 1px solid #575757;
+            min-height: 300px;
+            background-color: #333;
+        }
+
+        .card {
+            padding: 5px;
+            background-color: #444;
+            margin: 5px;
+            border: 1px solid #666;
+            cursor: move;
+            color: #89CFF0;
+        }
+
+        .trash-field {
+            width: 100%;
+            height: 50px;
+            background-color: #ff4d4d;
+            text-align: center;
+            line-height: 50px;
+            margin-top: 20px;
+            border: 1px solid #ff3333;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+        }
+
+        .search-bar {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            width: 70%;
+            padding: 10px;
+            font-size: 18px;
+        }
+
+        .search-bar button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .add-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+
+        .remove-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+        }
+
+        .search-results {
+            margin-top: 10px;
+        }
+
+        .search-results div {
+            padding: 10px;
+            border: 1px solid #575757;
+            background-color: #444;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+
+        .edit-section {
+            display: none;
+            margin-top: 30px;
+            background-color: #2c2c2c;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .btn-edit, .btn-delete {
+            background-color: #555;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+
+        .btn-edit:hover, .btn-delete:hover {
+            background-color: #777;
+        }
+    </style>
+
+    <!-- Load Firebase using correct browser-friendly scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+
+</head>
+<body>
+
+    <div class="sidebar">
+        <a href="#deck-creator" onclick="showPage('deck-creator-page')" class="active">Deck Creator</a>
+        <a href="#deck-importer" onclick="showPage('deck-importer-page')">Deck Importer</a>
+        <a href="#my-decks" onclick="showPage('my-decks-page')">My Decks</a>
+    </div>
+
+    <div class="main-content">
+        <div id="deck-creator-page" class="page">
+            <h2 class="header">Deck Creator</h2>
+            <div class="search-bar">
+                <input type="text" id="card-search" placeholder="Search for a card...">
+                <button class="add-btn" onclick="searchCard()">+</button>
+            </div>
+
+            <div class="search-results" id="search-results"></div>
+
+            <div class="deck-builder">
+                <div class="field" id="brainstorm-field">
+                    <h3>Brainstorm</h3>
+                </div>
+                <div class="field" id="final-deck-field">
+                    <h3>Final Deck</h3>
+                </div>
+            </div>
+
+            <button onclick="saveDeck()">Save Deck</button>
+        </div>
+
+        <div id="deck-importer-page" class="page">
+            <h2 class="header">Deck Importer</h2>
+            <form id="deck-form">
+                <label for="deck-name">Deck Name:</label><br>
+                <input type="text" id="deck-name-importer" name="deck-name" placeholder="Enter your deck name" required><br><br>
+                <textarea id="deck-list" rows="10" cols="50" placeholder="Enter your decklist here" required></textarea><br><br>
+                <button type="submit">Save Deck</button>
+            </form>
+        </div>
+
+        <div id="my-decks-page" class="page">
+            <h2 class="header">My Decks</h2>
+            <ul class="deck-list" id="deck-list-display"></ul>
+
+            <div id="edit-section" class="edit-section">
+                <h3>Edit Deck</h3>
+                <label for="deck-name">Deck Name:</label><br>
+                <input type="text" id="deck-name" name="deck-name" placeholder="Enter your deck name" required><br><br>
+
+                <div class="deck-builder">
+                    <div class="field" id="brainstorm-field">
+                        <h3>Brainstorm</h3>
+                    </div>
+                    <div class="field" id="final-deck-field">
+                        <h3>Final Deck</h3>
+                    </div>
+                </div>
+
+                <button onclick="saveDeck()">Save Deck</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyC44lJuHPSTJwdg8e6_25UWGHPRKdOdc0M",
+          authDomain: "mtg-deck-builder-26bf4.firebaseapp.com",
+          projectId: "mtg-deck-builder-26bf4",
+          storageBucket: "mtg-deck-builder-26bf4.appspot.com",
+          messagingSenderId: "885283890554",
+          appId: "1:885283890554:web:b1e50ad2c25d5c37c9e2c3",
+          measurementId: "G-M74HMV4W7W"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Save deck to Firebase
+        function saveDeck() {
+            const deckName = document.getElementById("deck-name").value.trim();
+            if (!deckName) {
+                alert("Please provide a deck name.");
+                return;
+            }
+
+            const deckBrainstorm = Array.from(document.getElementById("brainstorm-field").children).map(card => card.textContent.trim());
+            const deckFinal = Array.from(document.getElementById("final-deck-field").children).map(card => card.textContent.trim());
+
+            const newDeckRef = database.ref('decks/').push();
+            newDeckRef.set({
+                name: deckName,
+                brainstorm: deckBrainstorm,
+                final: deckFinal,
+                timestamp: Date.now()
+            }).then(() => {
+                alert("Deck saved successfully!");
+                loadDecks(); // Reload decks after saving
+            });
+        }
+
+        // Load all decks from Firebase
+        function loadDecks() {
+            const deckListDisplay = document.getElementById('deck-list-display');
+            deckListDisplay.innerHTML = ''; // Clear current list
+            database.ref('decks/').once('value', (snapshot) => {
+                snapshot.forEach((deck) => {
+                    const deckData = deck.val();
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <span>${deckData.name}</span>
+                        <button class="btn-edit" onclick="editDeck('${deck.key}')">Edit</button>
+                        <button class="btn-delete" onclick="deleteDeck('${deck.key}')">Delete</button>
+                    `;
+                    deckListDisplay.appendChild(listItem);
+                });
+            });
+        }
+
+        // Edit a deck
+        function editDeck(deckId) {
+            const deckRef = database.ref('decks/' + deckId);
+            deckRef.once('value').then((snapshot) => {
+                const deck = snapshot.val();
+                document.getElementById("deck-name").value = deck.name;
+                document.getElementById("brainstorm-field").innerHTML = '';
+                document.getElementById("final-deck-field").innerHTML = '';
+
+                deck.brainstorm.forEach(cardName => addToField(cardName, "brainstorm-field"));
+                deck.final.forEach(cardName => addToField(cardName, "final-deck-field"));
+
+                document.getElementById("edit-section").style.display = "block";
+            });
+        }
+
+        // Add card to field
+        function addToField(cardName, fieldId) {
+            const newCard = document.createElement("div");
+            newCard.className = "card";
+            newCard.textContent = cardName;
+
+            document.getElementById(fieldId).appendChild(newCard);
+        }
+
+        // Delete a deck
+        function deleteDeck(deckId) {
+            if (confirm("Are you sure you want to delete this deck?")) {
+                database.ref('decks/' + deckId).remove().then(() => {
+                    loadDecks(); // Reload decks after deletion
+                });
+            }
+        }
+
+        // Load decks on page load
+        window.onload = loadDecks;
+    </script>
+
+</body>
+</html>
